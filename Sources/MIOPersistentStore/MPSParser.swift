@@ -122,7 +122,7 @@ extension MIOPersistentStore
                      .integer32AttributeType,
                      .integer64AttributeType:
 
-                    if let number = value as? NSNumber { parsedValues[key] = number; continue }
+                    //if let number = value as? NSNumber { parsedValues[key] = number; continue }
                     switch attr.attributeType {
                     case .booleanAttributeType: parsedValues[key] = try check_type_and_not_null_value( value ) { MIOCoreBoolValue( $0 ) }
                     case .decimalAttributeType: parsedValues[key] = try check_type_and_not_null_value( value ) { MCDecimalValue( $0 ) }
