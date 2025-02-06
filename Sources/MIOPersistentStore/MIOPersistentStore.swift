@@ -392,6 +392,8 @@ open class MIOPersistentStore: NSIncrementalStore
         
         try request.execute()
         
+        print( "MIOPersistenStore:fetchObjects: \(fetchRequest) : \(request.resultItems)" )
+        
         let entities = request.resultItems!["entities"] as! [Any]
         let related_entities = request.resultItems!["relationShipEntities"] as! [Any]
         let object_ids = try updateObjects( items: entities, for: fetchRequest.entity!, relationships: request.includeRelationships )
