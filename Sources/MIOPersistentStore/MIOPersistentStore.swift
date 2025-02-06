@@ -392,7 +392,8 @@ open class MIOPersistentStore: NSIncrementalStore
         
         try request.execute()
         
-        print( "MIOPersistenStore:fetchObjects: \(fetchRequest) : \(request.resultItems)" )
+        print( "MIOPersistenStore:fetchObjects: \(fetchRequest.entityName!) -> \(request.resultItems)" )
+        Thread.sleep(forTimeInterval: 0.5)
         
         let entities = request.resultItems!["entities"] as! [Any]
         let related_entities = request.resultItems!["relationShipEntities"] as! [Any]
