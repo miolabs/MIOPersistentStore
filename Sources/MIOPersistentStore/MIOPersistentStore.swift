@@ -385,10 +385,12 @@ open class MIOPersistentStore: NSIncrementalStore
         
         try request.execute()
         
+        print("FETCH RESULT: \(request.resultItems)")
+        
         let entities = request.resultItems!["entities"] as! [Any]
         let related_entities = request.resultItems!["relationShipEntities"] as! [Any]
-        let object_ids = try updateObjects(items: entities, for: fetchRequest.entity!, relationships: request.includeRelationships )
-        _ = try updateObjects(items: related_entities, for: fetchRequest.entity!, relationships: request.includeRelationships )
+        let object_ids = try updateObjects( items: entities, for: fetchRequest.entity!, relationships: request.includeRelationships )
+        _ = try updateObjects( items: related_entities, for: fetchRequest.entity!, relationships: request.includeRelationships )
         
         switch fetchRequest.resultType {
         case .managedObjectIDResultType: return object_ids.0
