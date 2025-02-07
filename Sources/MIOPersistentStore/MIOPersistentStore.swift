@@ -374,8 +374,8 @@ open class MIOPersistentStore: NSIncrementalStore
     @discardableResult func fetchObjects(identifiers:[UUID], entityName:String, context:NSManagedObjectContext) throws -> Any? {
         let r = NSFetchRequest<NSManagedObject>(entityName: entityName)
         r.entity = persistentStoreCoordinator?.managedObjectModel.entitiesByName[entityName]
-        // CVarArgs predicate does not support uuid
-        r.predicate = MIOPredicateWithFormat(format: "identifier in %@", identifiers.map { $0.uuidString } )
+        // CVarArgs predicate does not support uuid in linux
+        r.predicate = MIOPredicateWithFormat( format: "identifier in \(identifiers)" )
         return try fetchObjects(fetchRequest:r, with:context)
     }
     
