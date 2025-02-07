@@ -9,7 +9,9 @@
 import Foundation
 import MIOCore
 import MIOCoreData
+import MIOCoreLogger
 
+let _log = MCLogger( label: "com.miolabs.persistent-store" )
 
 public protocol MIOPersistentStoreDelegate : NSObjectProtocol
 {
@@ -106,9 +108,9 @@ open class MIOPersistentStore: NSIncrementalStore
         }
         
         if node!.version == 0 {
-            print( "MIOPersistenStore:newValuesForObject:with:with: fetchObject \(objectID.entity.name!) \(identifier)" )
+            _log.debug( "MIOPersistenStore:newValuesForObject:with:with: fetchObject \(objectID.entity.name!) \(identifier)" )
             let ret = try fetchObject( withIdentifier:identifier, entityName: objectID.entity.name!, context:context )
-            print( "MIOPersistenStore:newValuesForObject:with:with: fetchObject \(objectID.entity.name!) \(identifier) :\(ret)" )
+            _log.debug( "MIOPersistenStore:newValuesForObject:with:with: fetchObject \(objectID.entity.name!) \(identifier) :\(String(describing: ret))" )
         }
         
         let storeNode = try node!.storeNode()
@@ -127,9 +129,9 @@ open class MIOPersistentStore: NSIncrementalStore
         if node!.version == 0 {
             //let delegate = ( context!.persistentStoreCoordinator!.persistentStores[0] as! MIOPersistentStore ).delegate!
             //print("\(delegate): newValue -> fetchObject: \(objectID.entity.name!).\(relationship.name) -> \(relationship.destinationEntity!.name!)://\(identifier)")
-            print( "MIOPersistenStore:newValue:forRelationship:forObjectWith:with: fetchObject \(objectID.entity.name!) \(identifier)" )
+            _log.debug( "MIOPersistenStore:newValue:forRelationship:forObjectWith:with: fetchObject \(objectID.entity.name!) \(identifier)" )
             let ret = try fetchObject( withIdentifier:identifier, entityName: objectID.entity.name!, context:context! )
-            print( "MIOPersistenStore:newValue:forRelationship:forObjectWith:with: fetchObject \(objectID.entity.name!) \(identifier) : \(ret)" )
+            _log.debug( "MIOPersistenStore:newValue:forRelationship:forObjectWith:with: fetchObject \(objectID.entity.name!) \(identifier) : \(String(describing: ret))" )
         }
         
         let value = try node!.value( forRelationship: relationship )
@@ -141,24 +143,22 @@ open class MIOPersistentStore: NSIncrementalStore
             if relNode == nil {
                 //let delegate = ( context!.persistentStoreCoordinator!.persistentStores[0] as! MIOPersistentStore ).delegate!
                 //print("\(delegate): newValue -> fetchObject: \(objectID.entity.name!).\(relationship.name) -> \(relationship.destinationEntity!.name!)://\(identifier)")
-                print( "MIOPersistenStore:newValue:forRelationship:forObjectWith:with: fetchObject \(relationship.destinationEntity!.name!) \(relIdentifier)" )
+                _log.debug( "MIOPersistenStore:newValue:forRelationship:forObjectWith:with: fetchObject \(relationship.destinationEntity!.name!) \(relIdentifier)" )
                 let ret = try fetchObject( withIdentifier:relIdentifier, entityName: relationship.destinationEntity!.name!, context:context! )
-                print( "MIOPersistenStore:newValue:forRelationship:forObjectWith:with: fetchObject \(objectID.entity.name!) \(identifier) : \(ret)" )
+                _log.debug( "MIOPersistenStore:newValue:forRelationship:forObjectWith:with: fetchObject \(objectID.entity.name!) \(identifier) : \(String(describing: ret))" )
                 relNode = try cacheNode(withIdentifier: relIdentifier, entity: relationship.destinationEntity!)
             }
             
             if relNode == nil {
                 let delegate = ( context!.persistentStoreCoordinator!.persistentStores[0] as! MIOPersistentStore ).delegate!
-                print( "************ FATAL ERROR" )
-                print("FATAL: CD CACHE NODE NULL: \(delegate): \(objectID.entity.name!).\(relationship.name) -> \(relationship.destinationEntity!.name!)://\(relIdentifier)")
-                print( "************ FATAL ERROR" )
+                _log.critical("CD CACHE NODE NULL: \(delegate): \(objectID.entity.name!).\(relationship.name) -> \(relationship.destinationEntity!.name!)://\(relIdentifier)")
                 throw MIOPersistentStoreError.identifierIsNull()
             }
             
             if relNode!.version == 0 {
-                print( "MIOPersistenStore:newValue:forRelationship:forObjectWith:with: fetchObject \(relationship.destinationEntity!.name!) \(relIdentifier)" )
+                _log.debug( "MIOPersistenStore:newValue:forRelationship:forObjectWith:with: fetchObject \(relationship.destinationEntity!.name!) \(relIdentifier)" )
                 let ret = try fetchObject( withIdentifier:relIdentifier, entityName: relationship.destinationEntity!.name!, context:context! )
-                print( "MIOPersistenStore:newValue:forRelationship:forObjectWith:with: fetchObject \(relationship.destinationEntity!.name!) \(relIdentifier) : \(ret)" )
+                _log.debug( "MIOPersistenStore:newValue:forRelationship:forObjectWith:with: fetchObject \(relationship.destinationEntity!.name!) \(relIdentifier) : \(String(describing: ret))" )
 
             }
             
@@ -182,17 +182,15 @@ open class MIOPersistentStore: NSIncrementalStore
             }
             
             if faultNodeIDs.isEmpty == false {
-                print( "MIOPersistenStore:newValue:forRelationship:forObjectWith:with: fetchObject \(relationship.destinationEntity!.name!) \(faultNodeIDs)" )
+                _log.debug( "MIOPersistenStore:newValue:forRelationship:forObjectWith:with: fetchObject \(relationship.destinationEntity!.name!) \(faultNodeIDs)" )
                 let ret = try fetchObjects(identifiers: faultNodeIDs, entityName: relationship.destinationEntity!.name!, context: context!)
-                print( "MIOPersistenStore:newValue:forRelationship:forObjectWith:with: fetchObject \(relationship.destinationEntity!.name!) \(faultNodeIDs) : \(ret)" )
+                _log.debug( "MIOPersistenStore:newValue:forRelationship:forObjectWith:with: fetchObject \(relationship.destinationEntity!.name!) \(faultNodeIDs) : \(String(describing: ret))" )
 
                 for relID in faultNodeIDs {
                     let relNode = try cacheNode(withIdentifier: relID, entity: relationship.destinationEntity!)
                     if relNode == nil {
                         let delegate = (context!.persistentStoreCoordinator!.persistentStores[0] as! MIOPersistentStore ).delegate!
-                        print("************ FATAL ERROR" )
-                        print ("FATAL: CD CACHE NODE NULL: \(delegate): \(objectID.entity.name!).\(relationship.name) -> \(relationship.destinationEntity!.name!)://\(relID)")
-                        print("************ FATAL ERROR" )
+                        _log.critical( "CD CACHE NODE NULL: \(delegate): \(objectID.entity.name!).\(relationship.name) -> \(relationship.destinationEntity!.name!)://\(relID)")
                         throw MIOPersistentStoreError.identifierIsNull()
                     }
                     
@@ -392,8 +390,7 @@ open class MIOPersistentStore: NSIncrementalStore
         
         try request.execute()
         
-        print( "MIOPersistenStore:fetchObjects: \(fetchRequest.entityName!) -> \(request.resultItems)" )
-        Thread.sleep(forTimeInterval: 0.5)
+        _log.debug( "MIOPersistenStore:fetchObjects: \(fetchRequest.entityName!) -> \(String(describing: request.resultItems))" )
         
         let entities = request.resultItems!["entities"] as! [Any]
         let related_entities = request.resultItems!["relationShipEntities"] as! [Any]
