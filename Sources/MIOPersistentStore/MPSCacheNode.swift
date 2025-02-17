@@ -45,7 +45,7 @@ open class MPSCacheNode : NSObject
         
         func reference(from value:Any) -> Any {
             if let objID = value as? NSManagedObjectID {
-                return reference(from: objID )
+                return (objID.persistentStore as! NSIncrementalStore).referenceObject(for: objID)
             }
             else if let obj = value as? NSManagedObject {
                 return reference(from: obj.objectID )

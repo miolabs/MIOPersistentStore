@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		14C5E9E72D5D31EB0011C18F /* MIOCoreLogger in Frameworks */ = {isa = PBXBuildFile; productRef = 14C5E9E62D5D31EB0011C18F /* MIOCoreLogger */; };
 		14FB37832D390E7E00E0FD8A /* MPSFetchRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14FB377D2D390E7E00E0FD8A /* MPSFetchRequest.swift */; };
 		14FB37842D390E7E00E0FD8A /* MPSRequestResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14FB37802D390E7E00E0FD8A /* MPSRequestResponse.swift */; };
 		14FB37852D390E7E00E0FD8A /* MIOPersistentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14FB377B2D390E7E00E0FD8A /* MIOPersistentStore.swift */; };
@@ -36,6 +37,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				14C5E9E72D5D31EB0011C18F /* MIOCoreLogger in Frameworks */,
 				14FB378D2D390EB500E0FD8A /* MIOCoreData.framework in Frameworks */,
 				14FB37972D39145000E0FD8A /* MIOCore in Frameworks */,
 			);
@@ -114,6 +116,7 @@
 			name = MIOPersistentStore;
 			packageProductDependencies = (
 				14FB37962D39145000E0FD8A /* MIOCore */,
+				14C5E9E62D5D31EB0011C18F /* MIOCoreLogger */,
 			);
 			productName = MIOPersistentStore;
 			productReference = 14FB37612D390DF100E0FD8A /* MIOPersistentStore.framework */;
@@ -196,7 +199,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 12.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
@@ -239,7 +242,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 12.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
@@ -410,6 +413,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		14C5E9E62D5D31EB0011C18F /* MIOCoreLogger */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MIOCoreLogger;
+		};
 		14FB37962D39145000E0FD8A /* MIOCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = MIOCore;
