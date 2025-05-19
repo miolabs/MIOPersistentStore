@@ -374,7 +374,9 @@ open class MIOPersistentStore: NSIncrementalStore
         let r = NSFetchRequest<NSManagedObject>(entityName: entityName)
         r.entity = persistentStoreCoordinator?.managedObjectModel.entitiesByName[entityName]
         // CVarArgs predicate does not support uuid in linux
-        r.predicate = MIOPredicateWithFormat( format: "identifier in \(identifiers)" )
+        //r.predicate = MIOPredicateWithFormat( format: "identifier in \(identifiers.map { "\($0)"} )" )
+        r.predicate = MIOPredicateWithFormat(format: "identifier in %@", identifiers.map { $0.uuidString } )
+
         return try fetchObjects(fetchRequest:r, with:context)
     }
     
@@ -392,8 +394,10 @@ open class MIOPersistentStore: NSIncrementalStore
         
         Log.debug( "MIOPersistenStore:fetchObjects: \(fetchRequest.entityName!) -> \(String(describing: request.resultItems))" )
         
-        let entities = request.resultItems!["entities"] as! [Any]
-        let related_entities = request.resultItems!["relationShipEntities"] as! [Any]
+        guard let entities = request.resultItems?["entities"] as? [Any] else { throw MIOPersistentStoreError.invalidRequest("ESQUEMA AQUI")}
+        
+        guard let related_entities = request.resultItems?["relationShipEntities"] as? [Any] else { throw MIOPersistentStoreError.invalidRequest("ESQUEMA AQUI")}
+        
         let object_ids = try updateObjects( items: entities, for: fetchRequest.entity!, relationships: request.includeRelationships )
         _ = try updateObjects( items: related_entities, for: fetchRequest.entity!, relationships: request.includeRelationships )
         
