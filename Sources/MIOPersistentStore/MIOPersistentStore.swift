@@ -375,7 +375,7 @@ open class MIOPersistentStore: NSIncrementalStore
         r.entity = persistentStoreCoordinator?.managedObjectModel.entitiesByName[entityName]
         // CVarArgs predicate does not support uuid in linux
         //r.predicate = MIOPredicateWithFormat( format: "identifier in \(identifiers.map { "\($0)"} )" )
-        r.predicate = MIOPredicateWithFormat(format: "identifier in %@", [ identifiers.map { $0.uuidString } ] )
+        r.predicate = MIOPredicateWithFormat(format: "identifier in %@", arguments: [ identifiers.map { $0.uuidString } ] )
 
         return try fetchObjects(fetchRequest:r, with:context)
     }
