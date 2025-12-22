@@ -66,6 +66,10 @@ open class MIOPersistentStore: NSIncrementalStore
     var storeURL:URL?
     var currentFetchContext:NSManagedObjectContext?
     
+    deinit {
+        Log.warning("MIOPersistentStore deinit - nodes: \(nodesByReferenceID.count)")
+    }
+    
     // MARK: - NSIncrementalStore override
     
     public override func loadMetadata() throws {
