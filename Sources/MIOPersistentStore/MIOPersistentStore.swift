@@ -256,8 +256,8 @@ open class MIOPersistentStore: NSIncrementalStore
     }
     
     // MARK: - Cache Nodes in memory
-    var objectsByEntityName = NSMutableDictionary()
-    var nodesByReferenceID = [String:MPSCacheNode]()
+//    public var objectsByEntityName = NSMutableDictionary()
+    public var nodesByReferenceID = [String:MPSCacheNode]()
     
     let bundleIdentfier = Bundle.main.bundleIdentifier
 //    let cacheNodeQueue = DispatchQueue(label: "\(String(describing: Bundle.main.bundleIdentifier)).mws.cache-queue")
