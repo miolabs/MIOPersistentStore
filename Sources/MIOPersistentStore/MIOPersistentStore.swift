@@ -68,6 +68,7 @@ open class MIOPersistentStore: NSIncrementalStore
     
     deinit {
         Log.warning("MIOPersistentStore deinit - nodes: \(nodesByReferenceID.count)")
+        nodesByReferenceID.removeAll()
     }
     
     // MARK: - NSIncrementalStore override
