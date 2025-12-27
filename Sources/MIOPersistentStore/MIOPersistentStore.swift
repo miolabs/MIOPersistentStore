@@ -67,8 +67,9 @@ open class MIOPersistentStore: NSIncrementalStore
     var currentFetchContext:NSManagedObjectContext?
     
     deinit {
-        Log.warning("MIOPersistentStore deinit - nodes: \(nodesByReferenceID.count)")
+        Log.debug("MIOPersistentStore deinit - nodes: \(nodesByReferenceID.count), objects: \(objectsByEntityName.count)")
         nodesByReferenceID.removeAll()
+        objectsByEntityName.removeAll( )
     }
     
     // MARK: - NSIncrementalStore override
@@ -261,8 +262,7 @@ open class MIOPersistentStore: NSIncrementalStore
     }
     
     // MARK: - Cache Nodes in memory
-//    public var objectsByEntityName = NSMutableDictionary()
-    public var nodesByReferenceID = [String:MPSCacheNode]()
+    var nodesByReferenceID = [String:MPSCacheNode]()
     
     let bundleIdentfier = Bundle.main.bundleIdentifier
 //    let cacheNodeQueue = DispatchQueue(label: "\(String(describing: Bundle.main.bundleIdentifier)).mws.cache-queue")
