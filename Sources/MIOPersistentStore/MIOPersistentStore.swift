@@ -66,8 +66,17 @@ open class MIOPersistentStore: NSIncrementalStore
     var storeURL:URL?
     var currentFetchContext:NSManagedObjectContext?
     
+    private static var instanceCount = 0
+    private static let countQueue = DispatchQueue(label: "context.count")
+
+    public required init(persistentStoreCoordinator root: NSPersistentStoreCoordinator?, configurationName name: String?, at url: URL, options: [AnyHashable : Any]? = nil) {
+        Self.countQueue.sync { Self.instanceCount += 1 }
+        super.init(persistentStoreCoordinator: root, configurationName: name, at: url, options: options)
+    }
+    
     deinit {
-        Log.debug("MIOPersistentStore deinit - nodes: \(nodesByReferenceID.count), objects: \(objectsByEntityName.count)")
+        Self.countQueue.sync { Self.instanceCount -= 1 }
+        Log.debug("MIOPersistentStore deinit - nodes: \(nodesByReferenceID.count), objects: \(objectsByEntityName.count), alive: \(Self.instanceCount)")
         nodesByReferenceID.removeAll()
         objectsByEntityName.removeAll( )
     }
