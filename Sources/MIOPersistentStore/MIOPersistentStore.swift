@@ -69,16 +69,16 @@ open class MIOPersistentStore: NSIncrementalStore
     private static var instanceCount = 0
     private static let countQueue = DispatchQueue(label: "context.count")
 
-    public required init(persistentStoreCoordinator root: NSPersistentStoreCoordinator?, configurationName name: String?, at url: URL, options: [AnyHashable : Any]? = nil) {
+    public required override init(persistentStoreCoordinator root: NSPersistentStoreCoordinator?, configurationName name: String?, at url: URL, options: [AnyHashable : Any]? = nil) {
         Self.countQueue.sync { Self.instanceCount += 1 }
         super.init(persistentStoreCoordinator: root, configurationName: name, at: url, options: options)
     }
     
     deinit {
         Self.countQueue.sync { Self.instanceCount -= 1 }
-        Log.debug("MIOPersistentStore deinit - nodes: \(nodesByReferenceID.count), objects: \(objectsByEntityName.count), alive: \(Self.instanceCount)")
+        Log.debug("MIOPersistentStore deinit - nodes: \(nodesByReferenceID.count), alive: \(Self.instanceCount)")
         nodesByReferenceID.removeAll()
-        objectsByEntityName.removeAll( )
+//        objectsByEntityName.removeAll( )
     }
     
     // MARK: - NSIncrementalStore override
