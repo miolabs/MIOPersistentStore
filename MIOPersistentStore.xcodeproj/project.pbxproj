@@ -15,8 +15,8 @@
 		14FB37872D390E7E00E0FD8A /* MPSRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14FB377F2D390E7E00E0FD8A /* MPSRequest.swift */; };
 		14FB37882D390E7E00E0FD8A /* MPSParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14FB377E2D390E7E00E0FD8A /* MPSParser.swift */; };
 		14FB37892D390E7E00E0FD8A /* MPSSaveRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14FB37812D390E7E00E0FD8A /* MPSSaveRequest.swift */; };
-		14FB378D2D390EB500E0FD8A /* MIOCoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 14FB378C2D390EB500E0FD8A /* MIOCoreData.framework */; };
 		14FB37972D39145000E0FD8A /* MIOCore in Frameworks */ = {isa = PBXBuildFile; productRef = 14FB37962D39145000E0FD8A /* MIOCore */; };
+		87F510C92F168E24003B2B63 /* MIOCoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 14FB378C2D390EB500E0FD8A /* MIOCoreData.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -38,7 +38,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				14C5E9E72D5D31EB0011C18F /* MIOCoreLogger in Frameworks */,
-				14FB378D2D390EB500E0FD8A /* MIOCoreData.framework in Frameworks */,
+				87F510C92F168E24003B2B63 /* MIOCoreData.framework in Frameworks */,
 				14FB37972D39145000E0FD8A /* MIOCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
