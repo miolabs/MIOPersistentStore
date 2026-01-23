@@ -425,11 +425,11 @@ open class MIOPersistentStore: NSIncrementalStore
     
     // MARK: -  Saving objects in server and caché
     func saveObjects(request:NSSaveChangesRequest, with context:NSManagedObjectContext) throws {
-        let r = self.delegate?.store(store: self, saveRequest: request)
-        try r?.execute()
+        let dl_request = self.delegate?.store(store: self, saveRequest: request)
+        try dl_request?.execute()
         
         // We only need to update the cache for updated objects. Inserted and deleted ones will be updated in the register / unregister objects
-        for obj in request.updatedObjects! {
+        for obj in request.updatedObjects ?? Set() {
             let id = referenceObject(for: obj.objectID) as! UUID
             try cacheNode(updateNodeWithValues: obj.changedValues(), identifier: id, entity: obj.entity)
         }
