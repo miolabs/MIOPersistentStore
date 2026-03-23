@@ -3,10 +3,12 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 90;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1478FACC2F6DE071006428A6 /* InMemoryLogging in Frameworks */ = {isa = PBXBuildFile; productRef = 1478FACB2F6DE071006428A6 /* InMemoryLogging */; };
+		1478FACE2F6DE071006428A6 /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = 1478FACD2F6DE071006428A6 /* Logging */; };
 		14C5E9E72D5D31EB0011C18F /* MIOCoreLogger in Frameworks */ = {isa = PBXBuildFile; productRef = 14C5E9E62D5D31EB0011C18F /* MIOCoreLogger */; };
 		14FB37832D390E7E00E0FD8A /* MPSFetchRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14FB377D2D390E7E00E0FD8A /* MPSFetchRequest.swift */; };
 		14FB37842D390E7E00E0FD8A /* MPSRequestResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14FB37802D390E7E00E0FD8A /* MPSRequestResponse.swift */; };
@@ -35,13 +37,13 @@
 /* Begin PBXFrameworksBuildPhase section */
 		14FB375E2D390DF100E0FD8A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				14C5E9E72D5D31EB0011C18F /* MIOCoreLogger in Frameworks */,
 				14FB378D2D390EB500E0FD8A /* MIOCoreData.framework in Frameworks */,
+				1478FACC2F6DE071006428A6 /* InMemoryLogging in Frameworks */,
 				14FB37972D39145000E0FD8A /* MIOCore in Frameworks */,
+				1478FACE2F6DE071006428A6 /* Logging in Frameworks */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -92,10 +94,8 @@
 /* Begin PBXHeadersBuildPhase section */
 		14FB375C2D390DF100E0FD8A /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXHeadersBuildPhase section */
 
@@ -111,12 +111,12 @@
 			);
 			buildRules = (
 			);
-			dependencies = (
-			);
 			name = MIOPersistentStore;
 			packageProductDependencies = (
 				14FB37962D39145000E0FD8A /* MIOCore */,
 				14C5E9E62D5D31EB0011C18F /* MIOCoreLogger */,
+				1478FACB2F6DE071006428A6 /* InMemoryLogging */,
+				1478FACD2F6DE071006428A6 /* Logging */,
 			);
 			productName = MIOPersistentStore;
 			productReference = 14FB37612D390DF100E0FD8A /* MIOPersistentStore.framework */;
@@ -145,7 +145,10 @@
 			);
 			mainGroup = 14FB37572D390DF100E0FD8A;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
+			packageReferences = (
+				1478FACA2F6DE071006428A6 /* XCRemoteSwiftPackageReference "swift-log" */,
+			);
+			preferredProjectObjectVersion = 90;
 			productRefGroup = 14FB37622D390DF100E0FD8A /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -158,17 +161,14 @@
 /* Begin PBXResourcesBuildPhase section */
 		14FB375F2D390DF100E0FD8A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		14FB375D2D390DF100E0FD8A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				14FB37832D390E7E00E0FD8A /* MPSFetchRequest.swift in Sources */,
 				14FB37842D390E7E00E0FD8A /* MPSRequestResponse.swift in Sources */,
@@ -178,12 +178,11 @@
 				14FB37882D390E7E00E0FD8A /* MPSParser.swift in Sources */,
 				14FB37892D390E7E00E0FD8A /* MPSSaveRequest.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		14FB37682D390DF100E0FD8A /* Debug */ = {
+		14FB37682D390DF100E0FD8A /* Debug configuration for PBXNativeTarget "MIOPersistentStore" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
@@ -226,7 +225,7 @@
 			};
 			name = Debug;
 		};
-		14FB37692D390DF100E0FD8A /* Release */ = {
+		14FB37692D390DF100E0FD8A /* Release configuration for PBXNativeTarget "MIOPersistentStore" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
@@ -269,7 +268,7 @@
 			};
 			name = Release;
 		};
-		14FB376A2D390DF100E0FD8A /* Debug */ = {
+		14FB376A2D390DF100E0FD8A /* Debug configuration for PBXProject "MIOPersistentStore" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -333,7 +332,7 @@
 			};
 			name = Debug;
 		};
-		14FB376B2D390DF100E0FD8A /* Release */ = {
+		14FB376B2D390DF100E0FD8A /* Release configuration for PBXProject "MIOPersistentStore" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -395,24 +394,43 @@
 		14FB375B2D390DF100E0FD8A /* Build configuration list for PBXProject "MIOPersistentStore" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				14FB376A2D390DF100E0FD8A /* Debug */,
-				14FB376B2D390DF100E0FD8A /* Release */,
+				14FB376A2D390DF100E0FD8A /* Debug configuration for PBXProject "MIOPersistentStore" */,
+				14FB376B2D390DF100E0FD8A /* Release configuration for PBXProject "MIOPersistentStore" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		14FB37672D390DF100E0FD8A /* Build configuration list for PBXNativeTarget "MIOPersistentStore" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				14FB37682D390DF100E0FD8A /* Debug */,
-				14FB37692D390DF100E0FD8A /* Release */,
+				14FB37682D390DF100E0FD8A /* Debug configuration for PBXNativeTarget "MIOPersistentStore" */,
+				14FB37692D390DF100E0FD8A /* Release configuration for PBXNativeTarget "MIOPersistentStore" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		1478FACA2F6DE071006428A6 /* XCRemoteSwiftPackageReference "swift-log" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-log.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.10.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
+		1478FACB2F6DE071006428A6 /* InMemoryLogging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1478FACA2F6DE071006428A6 /* XCRemoteSwiftPackageReference "swift-log" */;
+			productName = InMemoryLogging;
+		};
+		1478FACD2F6DE071006428A6 /* Logging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1478FACA2F6DE071006428A6 /* XCRemoteSwiftPackageReference "swift-log" */;
+			productName = Logging;
+		};
 		14C5E9E62D5D31EB0011C18F /* MIOCoreLogger */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = MIOCoreLogger;
