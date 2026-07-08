@@ -9,6 +9,13 @@ import Foundation
 import MIOCoreData
 import MIOCore
 
+/// When the MPS_VALIDATE_VALUES environment variable is set to a truthy
+/// value ("1", "true", "yes"), every row is converted eagerly at ingest so
+/// malformed values (bad JSON, invalid UUID/date strings) surface at fetch
+/// time. Off by default: conversion is deferred until the object is
+/// faulted. Read once at startup.
+let MPSValidateValuesOnIngest: Bool = MIOCoreBoolValue( MCEnvironmentVar( "MPS_VALIDATE_VALUES" ) ) ?? false
+
 // MARK - Parser methods
 
 extension MIOPersistentStore
@@ -65,12 +72,9 @@ extension MIOPersistentStore
 
         objectIDs.append( node!.objectID )
 
-        #if DEBUG
-        // Surface malformed values (bad JSON, invalid UUID/date strings) at
-        // fetch time while developing. Production defers the conversion to
-        // the first fault of each object.
-        try node!.validateValues()
-        #endif
+        if MPSValidateValuesOnIngest {
+            try node!.validateValues()
+        }
 
         // Look for parent entity
 //        var check:NSEntityDescription? = entity
