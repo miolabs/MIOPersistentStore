@@ -109,9 +109,16 @@ extension MIOPersistentStore
                     parsedValues[key] = try check_type_and_not_null_value( value as? String ) { UUID(uuidString: $0 as! String ) }
                 
                 case .transformableAttributeType:
-                    if let dict = value as? [String:Any] { parsedValues[key] = dict; continue }
-                    parsedValues[key] = try check_type_and_not_null_value( value as? String) {
-                        try JSONSerialization.jsonObject( with: ( $0 as! String ).data( using: .utf8 )!, options: [ .allowFragments ] )
+                    // Only web/sync sources deliver transformables as JSON text;
+                    // the DB driver hands over the parsed graph (dictionary,
+                    // array or fragment), which passes through as-is.
+                    if let str = value as? String {
+                        parsedValues[key] = try check_type_and_not_null_value( str ) {
+                            try JSONSerialization.jsonObject( with: ( $0 as! String ).data( using: .utf8 )!, options: [ .allowFragments ] )
+                        }
+                    }
+                    else {
+                        parsedValues[key] = value
                     }
                 
                 case .booleanAttributeType,
