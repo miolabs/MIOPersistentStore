@@ -45,7 +45,7 @@ fileprivate func TestManagedObjectConext() -> MIOCoreData.NSManagedObjectContext
 
 final class MIOCoreDataTests: XCTestCase
 {
-    func testCreateObject() {s
+    func testCreateObject() {
         let moc = TestManagedObjectConext()
         
         //let doc = NSEntityDescription.insertNewObject(forEntityName: "Document", into: moc)
