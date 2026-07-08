@@ -56,12 +56,12 @@ extension MIOPersistentStore
         var node = try cacheNode( withIdentifier: identifier, entity: entity )
         if node == nil {
             // --- NSLog("New version: " + entity.name! + " (\(version))");
-            node = try cacheNode( newNodeWithValues: parsedValues, identifier: identifier, version: version, entity: entity, objectID: objectID )
+            node = try cacheNode( newNodeWithValues: parsedValues, identifier: identifier, version: version, entity: entity, objectID: objectID, parsedValues: true )
             insertedObjectIDs.add(node!.objectID)
         }
         else if version > node!.version {
             // --- NSLog("Update version: \(entity.name!) (\(node!.version) -> \(version))")
-            try cacheNode( updateNodeWithValues: parsedValues, identifier: identifier, version: version, entity: entity )
+            try cacheNode( updateNodeWithValues: parsedValues, identifier: identifier, version: version, entity: entity, parsedValues: true )
             updatedObjectIDs.add( node!.objectID )
         }
 

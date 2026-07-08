@@ -294,11 +294,11 @@ open class MIOPersistentStore: NSIncrementalStore
         return node
     }
     
-    func cacheNode(newNodeWithValues values:[String:Any], identifier: UUID, version:UInt64, entity:NSEntityDescription, objectID:NSManagedObjectID?) throws -> MPSCacheNode {
-            
+    func cacheNode(newNodeWithValues values:[String:Any], identifier: UUID, version:UInt64, entity:NSEntityDescription, objectID:NSManagedObjectID?, parsedValues: Bool = false) throws -> MPSCacheNode {
+
         let id = identifier
         let objID = objectID ?? newObjectID( for: entity, referenceObject: id )
-        let node = MPSCacheNode( identifier:id, entity: entity, withValues: values, version: version, objectID: objID )
+        let node = MPSCacheNode( identifier:id, entity: entity, withValues: values, version: version, objectID: objID, parsedValues: parsedValues )
                                
         try cacheNodeQueue().sync {
             nodesByReferenceID[node.referenceID] = node
@@ -324,14 +324,14 @@ open class MIOPersistentStore: NSIncrementalStore
         }
     }
     
-    func cacheNode(updateNodeWithValues values:[String:Any], identifier:UUID, version:UInt64? = nil, entity:NSEntityDescription) throws {
-        
+    func cacheNode(updateNodeWithValues values:[String:Any], identifier:UUID, version:UInt64? = nil, entity:NSEntityDescription, parsedValues: Bool = false) throws {
+
         let referenceID = MPSCacheNode.referenceID(withIdentifier: identifier, entity: entity)
-                
+
         try cacheNodeQueue().sync {
             let node = nodesByReferenceID[referenceID]!
             let v = version ?? node.version
-            node.update(withValues: values, version: v)
+            node.update(withValues: values, version: v, parsedValues: parsedValues)
         }
     }
     
