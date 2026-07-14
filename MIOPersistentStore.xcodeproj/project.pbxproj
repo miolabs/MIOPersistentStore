@@ -17,6 +17,7 @@
 		87AD9D5E2F7549D400071ED2 /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = 87AD9D5D2F7549D400071ED2 /* Logging */; };
 		87FDF8292F75395A00785AF4 /* MIOCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 87FDF8282F75395A00785AF4 /* MIOCore.framework */; };
 		87FDF82D2F75395F00785AF4 /* MIOCoreLogger.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 87FDF82C2F75395F00785AF4 /* MIOCoreLogger.framework */; };
+		93E826B13000F4E5008B762F /* MIOCoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93E826B03000F4E5008B762F /* MIOCoreData.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +33,7 @@
 		14FB378C2D390EB500E0FD8A /* MIOCoreData.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MIOCoreData.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		87FDF8282F75395A00785AF4 /* MIOCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MIOCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		87FDF82C2F75395F00785AF4 /* MIOCoreLogger.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MIOCoreLogger.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		93E826B03000F4E5008B762F /* MIOCoreData.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MIOCoreData.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -39,6 +41,7 @@
 			isa = PBXFrameworksBuildPhase;
 			files = (
 				87AD9D5E2F7549D400071ED2 /* Logging in Frameworks */,
+				93E826B13000F4E5008B762F /* MIOCoreData.framework in Frameworks */,
 				87FDF8292F75395A00785AF4 /* MIOCore.framework in Frameworks */,
 				87FDF82D2F75395F00785AF4 /* MIOCoreLogger.framework in Frameworks */,
 			);
@@ -82,6 +85,7 @@
 		14FB378B2D390EB500E0FD8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				93E826B03000F4E5008B762F /* MIOCoreData.framework */,
 				87FDF82C2F75395F00785AF4 /* MIOCoreLogger.framework */,
 				87FDF8282F75395A00785AF4 /* MIOCore.framework */,
 				14FB378C2D390EB500E0FD8A /* MIOCoreData.framework */,
@@ -187,7 +191,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = 53X2422NYU;
+				DEVELOPMENT_TEAM = R6YZBFUM74;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
@@ -230,7 +234,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = 53X2422NYU;
+				DEVELOPMENT_TEAM = R6YZBFUM74;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
