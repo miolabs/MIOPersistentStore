@@ -21,23 +21,20 @@ let MPSValidateValuesOnIngest: Bool = MIOCoreBoolValue( MCEnvironmentVar( "MPS_V
 extension MIOPersistentStore
 {
     
-    func updateObjects(items:[Any], for entity:NSEntityDescription, relationships:[String]?) throws -> ([NSManagedObjectID], [NSManagedObjectID], [NSManagedObjectID]) {
-        
+    func updateObjects(items:[Any], for entity:NSEntityDescription) throws -> [NSManagedObjectID] {
+
         var objects:[NSManagedObjectID] = []
-        let insertedObjects = NSMutableSet()
-        let updatedObjects = NSMutableSet()
-        let relationshipNodes = NSMutableDictionary()
-        relationShipsNodes(relationships: relationships, nodes: relationshipNodes)
-        
+        objects.reserveCapacity( items.count )
+
         for i in items {
             let values = i as! [String : Any]
-            try updateObject(values:values, fetchEntity:entity, objectID:nil, relationshipNodes: relationshipNodes, objectIDs:&objects, insertedObjectIDs:insertedObjects, updatedObjectIDs:updatedObjects)
+            try updateObject(values:values, fetchEntity:entity, objectID:nil, objectIDs:&objects)
         }
-        
-        return (objects, insertedObjects.allObjects as! [NSManagedObjectID], updatedObjects.allObjects as! [NSManagedObjectID])
+
+        return objects
     }
 
-    func updateObject(values:[String:Any], fetchEntity:NSEntityDescription, objectID:NSManagedObjectID?, relationshipNodes:NSMutableDictionary?, objectIDs:inout [NSManagedObjectID], insertedObjectIDs:NSMutableSet, updatedObjectIDs:NSMutableSet) throws {
+    func updateObject(values:[String:Any], fetchEntity:NSEntityDescription, objectID:NSManagedObjectID?, objectIDs:inout [NSManagedObjectID]) throws {
 
         var entity = fetchEntity
         let entityName = values["classname"] as! String // ?? fetchEntity.name!
@@ -60,52 +57,16 @@ extension MIOPersistentStore
         // values happens lazily when the object is faulted.
         var node = try cacheNode( withIdentifier: identifier, entity: entity )
         if node == nil {
-            // --- NSLog("New version: " + entity.name! + " (\(version))");
             node = try cacheNode( newNodeWithValues: values, identifier: identifier, version: version, entity: entity, objectID: objectID )
-            insertedObjectIDs.add(node!.objectID)
         }
         else if version > node!.version {
-            // --- NSLog("Update version: \(entity.name!) (\(node!.version) -> \(version))")
             try cacheNode( updateNodeWithValues: values, identifier: identifier, version: version, entity: entity )
-            updatedObjectIDs.add( node!.objectID )
         }
 
         objectIDs.append( node!.objectID )
 
         if MPSValidateValuesOnIngest {
             try node!.validateValues()
-        }
-
-        // Look for parent entity
-//        var check:NSEntityDescription? = entity
-//        while check != nil {
-//            if check!.name == entity.name { objectIDs.append( node!.objectID ); break }
-//            check = check?.superentity
-//        }
-    }
-
-    func relationShipsNodes(relationships:[String]?, nodes: NSMutableDictionary) {
-        
-        if relationships == nil {
-            return
-        }
-        
-        for keyPath in relationships! {
-            let keys = keyPath.split(separator: ".")
-            let key = String(keys[0])
-            
-            var values = nodes[key] as? NSMutableDictionary
-            if values == nil {
-                values = NSMutableDictionary()
-                nodes[key] = values!
-            }
-            
-            if (keys.count > 1) {
-                let index = keyPath.index(keyPath.startIndex, offsetBy:key.count + 1)
-                let subKeyPath = String(keyPath[index...])
-                //var subNodes = [String:Any]()
-                relationShipsNodes(relationships: [subKeyPath], nodes: values!)
-            }
         }
     }
 }

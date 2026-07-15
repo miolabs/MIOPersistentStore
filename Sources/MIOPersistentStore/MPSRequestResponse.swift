@@ -13,7 +13,9 @@ public class MPSRequestResponse : NSObject {
     var items : Any?
     var timestamp : TimeInterval
         
+    #if canImport(ObjectiveC)
     @objc
+    #endif
     public init(result : Bool, items : Any?, timestamp : TimeInterval) {
         self.result = result
         self.items = items

@@ -14,11 +14,7 @@ import MIOPersistentStore
 
 fileprivate func TestManagedObjectModel() -> MIOCoreData.NSManagedObjectModel
 {
-    let model = MIOCoreData.NSManagedObjectModel()
-
-    model.entities = TestEntities()
- 
-    return model
+    return MPSTestManagedObjectModel()
 }
 
 fileprivate func TestManagedObjectConext() -> MIOCoreData.NSManagedObjectContext
