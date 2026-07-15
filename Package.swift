@@ -1,4 +1,4 @@
-// swift-tools-version:5.9
+// swift-tools-version:6.2
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -18,8 +18,8 @@ let package = Package(
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
         // TEMP-LOCAL: wasm spike — local checkouts have WASI gates; restore the github URLs before committing
-        .package(path: "../MIOCoreData" ),
-        .package(path: "../MIOCore" ),
+        .package(url: "https://github.com/miolabs/MIOCoreData.git", branch: "master" ),
+        .package(url: "https://github.com/miolabs/MIOCore.git", branch: "master" ),
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
