@@ -71,7 +71,10 @@ extension MIOPersistentStoreError: LocalizedError {
 open class MIOPersistentStore: NSIncrementalStore
 {
     public static let storeType:String = "MIOPersistentStore"
-    public static let storeDescription: NSPersistentStoreDescription = {
+    // NSPersistentStoreDescription is a reference type the compiler cannot
+    // prove Sendable; this instance is configured once here and treated as
+    // immutable by every consumer
+    nonisolated(unsafe) public static let storeDescription: NSPersistentStoreDescription = {
         let description = NSPersistentStoreDescription()
         description.type = MIOPersistentStore.storeType
         return description
@@ -94,7 +97,7 @@ open class MIOPersistentStore: NSIncrementalStore
     #endif
     let cacheQueue: DispatchQueue
 
-    private static var instanceCount = 0
+    nonisolated(unsafe) private static var instanceCount = 0   // countQueue-serialized
     private static let countQueue = DispatchQueue(label: "context.count")
 
     public required override init(persistentStoreCoordinator root: NSPersistentStoreCoordinator?, configurationName name: String?, at url: URL, options: [AnyHashable : Any]? = nil) {

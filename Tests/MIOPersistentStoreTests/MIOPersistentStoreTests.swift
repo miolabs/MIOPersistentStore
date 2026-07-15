@@ -11,8 +11,4 @@ final class MIOPersistentStoreTests: XCTestCase {
         XCTAssertTrue(true)
         
     }
-
-    static var allTests = [
-        ("testExample", testExample),
-    ]
 }
