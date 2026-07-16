@@ -38,7 +38,9 @@ extension MIOPersistentStoreDelegate
     }
 }
 
-public enum MIOPersistentStoreError : Error
+// @unchecked: the invalidValueType payload carries Any? for the offending
+// value; errors are created and consumed for messaging only
+public enum MIOPersistentStoreError : Error, @unchecked Sendable
 {
     case noStoreURL(_ schema:String = "", functionName: String = #function)
     case invalidRequest(_ schema:String = "", functionName: String = #function)
