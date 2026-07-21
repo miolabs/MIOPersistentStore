@@ -104,6 +104,8 @@ open class MPSCacheNode : NSObject
     /// absent keys are skipped — the store node treats missing attributes
     /// as nil, and nil relationships resolve to NSNull on read.
     private func convert_values_if_needed() throws {
+        Log.debug( "convert_values_if_needed. \(_entity.name!)" )
+        
         if _attributeValues != nil { return }
 
         var attrs:[String:Any] = [:]
