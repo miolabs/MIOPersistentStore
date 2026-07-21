@@ -13,6 +13,7 @@ import XCTest
 import Foundation
 import MIOCoreData
 @testable import MIOPersistentStore
+@testable import CoreDataSwift
 
 // MARK: - Test model
 
@@ -295,3 +296,28 @@ final class MPSCacheTests: XCTestCase
 }
 
 #endif
+
+// MARK: - Temporary-object invariant
+
+extension MPSCacheTests {
+
+    /// Temporary (unsaved) objects exist only in the context until save: the
+    /// store must not fetch the DB for them, must not resolve relationships,
+    /// and must not hold cache nodes for their temporary reference IDs.
+    func testTemporaryObjectsNeverReachTheDelegateOrTheCache() throws {
+        let entityDesc = entity("SimpleEntity")
+        let tempID = MIOCoreData.NSManagedObjectID(WithEntity: entityDesc, referenceObject: nil)
+        tempID._persistentStore = store
+        XCTAssertTrue(tempID.isTemporaryID)
+
+        // newValuesForObject: empty node, no delegate fetch, no cache node.
+        let node = try store.newValuesForObject(with: tempID, with: moc)
+        XCTAssertEqual(node.version, 0)
+        XCTAssertEqual(storeDelegate.fetchCount, 0, "a temporary object must never trigger a DB fetch")
+        XCTAssertEqual(store.nodesByCacheKey.count, 0, "a temporary object must never create a cache node")
+
+        // Registration callback: no placeholder nodes for temporary IDs.
+        store.managedObjectContextDidRegisterObjects(with: [tempID])
+        XCTAssertEqual(store.nodesByCacheKey.count, 0, "registering a temporary object must not cache it")
+    }
+}

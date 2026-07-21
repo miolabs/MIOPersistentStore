@@ -145,9 +145,16 @@ open class MIOPersistentStore: NSIncrementalStore
     }
     
     public override func newValuesForObject(with objectID: NSManagedObjectID, with context: NSManagedObjectContext) throws -> NSIncrementalStoreNode {
-        
+
+        // Temporary (unsaved) objects exist only in the context: the store has
+        // no cache node and the DB has no row until save, so a fetch is doomed.
+        if objectID.isTemporaryID {
+            Log.warning( "newValuesForObject asked for a temporary object of \(objectID.entity.name ?? "?") — unsaved objects live in the context, not the store" )
+            return NSIncrementalStoreNode( objectID: objectID, withValues: [:], version: 0 )
+        }
+
         let identifier = referenceObject( for: objectID ) as! UUID
-        
+
         var node = try cacheNode( withIdentifier: identifier, entity: objectID.entity )
         if node == nil {
             node = try cacheNode(newNodeWithValues: [:], identifier: identifier, version: 0, entity: objectID.entity, objectID: objectID)
@@ -164,9 +171,17 @@ open class MIOPersistentStore: NSIncrementalStore
     }
     
     public override func newValue(forRelationship relationship: NSRelationshipDescription, forObjectWith objectID: NSManagedObjectID, with context: NSManagedObjectContext?) throws -> Any {
-        
+
+        // Same invariant as newValuesForObject: an unsaved object cannot be
+        // resolved by the store — its relationships live in the context's
+        // pending changes until save.
+        if objectID.isTemporaryID {
+            Log.warning( "newValue(forRelationship: \(relationship.name)) asked for a temporary object of \(objectID.entity.name ?? "?")" )
+            return relationship.isToMany ? [NSManagedObjectID]() : NSNull()
+        }
+
         let identifier = referenceObject(for: objectID) as! UUID
-        
+
         var node = try cacheNode( withIdentifier: identifier, entity: objectID.entity )
         if node == nil {
             node = try cacheNode(newNodeWithValues: [:], identifier: identifier, version: 0, entity: objectID.entity, objectID: objectID)
@@ -289,11 +304,11 @@ open class MIOPersistentStore: NSIncrementalStore
     }
     
     public override func managedObjectContextDidRegisterObjects(with objectIDs: [NSManagedObjectID]) {
-        for objID in objectIDs {
-            if objID.isTemporaryID == false { continue }
-            guard let identifier = referenceObject(for: objID) as? UUID else { continue }
-            _ = try? cacheNode(newNodeWithValues: [:], identifier: identifier, version: 0, entity: objID.entity, objectID: objID)
-        }
+        // Temporary (unsaved) objects are never cached: they exist only in the
+        // context until save. The old placeholder nodes created here were keyed
+        // by the temporary reference UUID, which leaked forever — at save the
+        // ID mutates to its permanent reference, so unregister could never find
+        // them again.
     }
     
     public override func managedObjectContextDidUnregisterObjects(with objectIDs: [NSManagedObjectID]) {
