@@ -319,7 +319,15 @@ open class MIOPersistentStore: NSIncrementalStore
             guard let identifier = referenceObject(for: objID) as? UUID else { continue }
             let key = MPSCacheKey( entityName: objID.entity.name!, id: identifier )
             cacheQueue.sync {
-                nodesByCacheKey[key]?.registrationCount += 1
+                registrationCountByCacheKey[key, default: 0] += 1
+                if nodesByCacheKey[key] == nil {
+                    // This callback cannot throw, so a warning is the loudest
+                    // signal available. Legitimate for faults materialized
+                    // from a bare permanent ID (the node arrives at first
+                    // fault or at save) — any other case is a caching hole
+                    // that will surface as cacheNodeNotFound at save time.
+                    Log.warning( "Registered \(key.entityName)://\(identifier.uuidString) before its row is cached" )
+                }
             }
         }
     }
@@ -328,14 +336,21 @@ open class MIOPersistentStore: NSIncrementalStore
         // Evict only when the last registration goes away: the cache is shared
         // by every context on this store, and the old unconditional delete
         // pulled nodes out from under contexts that still held the object.
+        // A key without a count entry was already force-evicted by a
+        // delete-save — nothing to do.
         for objID in objectIDs {
             guard let identifier = referenceObject(for: objID) as? UUID else { continue }
             let key = MPSCacheKey( entityName: objID.entity.name!, id: identifier )
             var evict = false
             cacheQueue.sync {
-                guard let node = nodesByCacheKey[key] else { return }
-                node.registrationCount -= 1
-                evict = node.registrationCount <= 0
+                guard let count = registrationCountByCacheKey[key] else { return }
+                if count <= 1 {
+                    registrationCountByCacheKey.removeValue(forKey: key)
+                    evict = true
+                }
+                else {
+                    registrationCountByCacheKey[key] = count - 1
+                }
             }
             if evict {
                 try? cacheNode( deleteNodeAtIdentifier: identifier, entity: objID.entity )
@@ -345,6 +360,14 @@ open class MIOPersistentStore: NSIncrementalStore
     
     // MARK: - Cache Nodes in memory
     var nodesByCacheKey = [MPSCacheKey:MPSCacheNode]()
+
+    /// Registration reference counts (Apple's didRegister/didUnregister pair),
+    /// kept separate from the nodes on purpose: a context can legitimately
+    /// register an object whose row is not cached yet — a permanent ID
+    /// materialized as a fault gets its node at first fault or at save — so
+    /// the bookkeeping must never depend on node existence, or those counts
+    /// would be silently lost. Guarded by cacheQueue.
+    var registrationCountByCacheKey = [MPSCacheKey:Int]()
 
     func cacheNode(withIdentifier identifier:UUID, entity:NSEntityDescription) throws -> MPSCacheNode? {
 
@@ -406,6 +429,10 @@ open class MIOPersistentStore: NSIncrementalStore
 
         _ = cacheQueue.sync {
             nodesByCacheKey.removeValue(forKey: key)
+            // A force-delete (delete-save) drops the registration count with
+            // the row: stale counts must not block eviction of a re-created
+            // node, and outstanding unregisters for this key become no-ops.
+            registrationCountByCacheKey.removeValue(forKey: key)
         }
 
         if entity.superentity != nil {

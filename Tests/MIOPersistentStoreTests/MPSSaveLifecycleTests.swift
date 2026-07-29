@@ -212,6 +212,51 @@ final class MPSSaveLifecycleTests: XCTestCase
         store.managedObjectContextDidUnregisterObjects(with: [tempID])
 
         XCTAssertEqual(store.nodesByCacheKey.count, 0)
+        XCTAssertEqual(store.registrationCountByCacheKey.count, 0)
+    }
+
+    func testRegistrationBeforeNodeIsNotLost() throws {
+        // A fault materialized from a bare permanent ID registers before any
+        // row is cached (the node arrives at first fault or at save). The
+        // count must be recorded anyway, or eviction accounting is wrong for
+        // the node's whole lifetime.
+        let id = UUID()
+        let objID = store.newObjectID(for: entity("SimpleEntity"), referenceObject: id)
+
+        store.managedObjectContextDidRegisterObjects(with: [objID])
+        XCTAssertEqual(store.registrationCountByCacheKey[MPSCacheKey(entityName: "SimpleEntity", id: id)], 1,
+                       "a registration without a cached row must still be counted")
+
+        // The row arrives later.
+        try fetch("SimpleEntity", rows: [ row("SimpleEntity", id, name: "late") ])
+        XCTAssertNotNil(try store.cacheNode(withIdentifier: id, entity: entity("SimpleEntity")))
+
+        // The early registration is what keeps the eviction balanced.
+        store.managedObjectContextDidUnregisterObjects(with: [objID])
+        XCTAssertNil(try store.cacheNode(withIdentifier: id, entity: entity("SimpleEntity")),
+                     "the pre-node registration must count toward eviction")
+        XCTAssertEqual(store.registrationCountByCacheKey.count, 0)
+    }
+
+    func testDeleteSaveDropsStaleRegistrationCounts() throws {
+        let id = UUID()
+        let obj = insertSimpleEntity(id: id, name: "doomed")
+        try moc.save()
+
+        // Another context still holds a registration when the delete-save
+        // lands: the row and its counts go with the save, and the outstanding
+        // unregister becomes a harmless no-op.
+        let objID = try store.cacheNode(withIdentifier: id, entity: entity("SimpleEntity"))!.objectID
+        store.managedObjectContextDidRegisterObjects(with: [objID])
+
+        moc.delete(obj)
+        try moc.save()
+
+        XCTAssertNil(try store.cacheNode(withIdentifier: id, entity: entity("SimpleEntity")))
+        XCTAssertNil(store.registrationCountByCacheKey[MPSCacheKey(entityName: "SimpleEntity", id: id)],
+                     "a delete-save must drop the registration counts with the row")
+        store.managedObjectContextDidUnregisterObjects(with: [objID])   // must not trap or resurrect anything
+        XCTAssertEqual(store.registrationCountByCacheKey.count, 0)
     }
 
     // MARK: Subentity inserts register the whole hierarchy
