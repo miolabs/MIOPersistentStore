@@ -46,6 +46,12 @@ open class MPSCacheNode : NSObject
     private var _node:NSIncrementalStoreNode?
     private let _lock = NSLock()
 
+    /// Number of live context registrations holding this node — Apple's
+    /// didRegister/didUnregister pair is a reference count on the row cache,
+    /// and the node is only evicted when the last registration goes away.
+    /// Guarded by the store's cacheQueue, not the node lock.
+    var registrationCount: Int = 0
+
     open var version: UInt64 { return _version }
     open var referenceID:String { get { return _referenceID } }
     open var objectID:NSManagedObjectID { get { return _objectID } }
