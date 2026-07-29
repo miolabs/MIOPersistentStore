@@ -48,6 +48,7 @@ public enum MIOPersistentStoreError : Error, @unchecked Sendable
     case invalidValueType(_ schema:String = "", entityName:String, key:String, value:Any?, functionName: String = #function)
     case relationIdentifierNoExist(_ schema:String = "", entityName:String, relation:String, relationEntityName:String, id:String, functionName: String = #function)
     case delegateIsNull(_ schema:String = "", functionName: String = #function )
+    case cacheNodeNotFound(_ schema:String = "", entityName:String, id:UUID, functionName: String = #function )
 }
 
 extension MIOPersistentStoreError: LocalizedError {
@@ -65,6 +66,8 @@ extension MIOPersistentStoreError: LocalizedError {
             return "[MIOPersistentStoreError] \(schema) Relation identifier not exist. \(entityName).\(relation)): \(relationEntityName)://\(id). \(functionName)"
         case let .delegateIsNull(schema, functionName):
             return "[MIOPersistentStoreError] \(schema) Delegate is null. \(functionName)"
+        case let .cacheNodeNotFound(schema, entityName, id, functionName):
+            return "[MIOPersistentStoreError] \(schema) No cache node for \(entityName)://\(id.uuidString). \(functionName)"
         }
     }
 }
@@ -304,22 +307,67 @@ open class MIOPersistentStore: NSIncrementalStore
     }
     
     public override func managedObjectContextDidRegisterObjects(with objectIDs: [NSManagedObjectID]) {
-        // Temporary (unsaved) objects are never cached: they exist only in the
-        // context until save. The old placeholder nodes created here were keyed
-        // by the temporary reference UUID, which leaked forever — at save the
-        // ID mutates to its permanent reference, so unregister could never find
-        // them again.
+        // Apple contract: this pair is a reference count on the row cache —
+        // "the objects with these IDs are in use in a context". Only permanent
+        // IDs ever arrive here; temporary (unsaved) objects exist only in the
+        // context until save and the store is never notified about them. The
+        // node itself is created by the save or fetch request, never here (the
+        // callback carries no values). Nodes without a registration (e.g.
+        // side-loaded relationship rows) just stay at count zero.
+        for objID in objectIDs {
+            if objID.isTemporaryID { continue }
+            guard let identifier = referenceObject(for: objID) as? UUID else { continue }
+            let key = MPSCacheKey( entityName: objID.entity.name!, id: identifier )
+            cacheQueue.sync {
+                registrationCountByCacheKey[key, default: 0] += 1
+                if nodesByCacheKey[key] == nil {
+                    // This callback cannot throw, so a warning is the loudest
+                    // signal available. Legitimate for faults materialized
+                    // from a bare permanent ID (the node arrives at first
+                    // fault or at save) — any other case is a caching hole
+                    // that will surface as cacheNodeNotFound at save time.
+                    Log.warning( "Registered \(key.entityName)://\(identifier.uuidString) before its row is cached" )
+                }
+            }
+        }
     }
-    
+
     public override func managedObjectContextDidUnregisterObjects(with objectIDs: [NSManagedObjectID]) {
+        // Evict only when the last registration goes away: the cache is shared
+        // by every context on this store, and the old unconditional delete
+        // pulled nodes out from under contexts that still held the object.
+        // A key without a count entry was already force-evicted by a
+        // delete-save — nothing to do.
         for objID in objectIDs {
             guard let identifier = referenceObject(for: objID) as? UUID else { continue }
-            try? cacheNode( deleteNodeAtIdentifier: identifier, entity: objID.entity )
+            let key = MPSCacheKey( entityName: objID.entity.name!, id: identifier )
+            var evict = false
+            cacheQueue.sync {
+                guard let count = registrationCountByCacheKey[key] else { return }
+                if count <= 1 {
+                    registrationCountByCacheKey.removeValue(forKey: key)
+                    evict = true
+                }
+                else {
+                    registrationCountByCacheKey[key] = count - 1
+                }
+            }
+            if evict {
+                try? cacheNode( deleteNodeAtIdentifier: identifier, entity: objID.entity )
+            }
         }
     }
     
     // MARK: - Cache Nodes in memory
     var nodesByCacheKey = [MPSCacheKey:MPSCacheNode]()
+
+    /// Registration reference counts (Apple's didRegister/didUnregister pair),
+    /// kept separate from the nodes on purpose: a context can legitimately
+    /// register an object whose row is not cached yet — a permanent ID
+    /// materialized as a fault gets its node at first fault or at save — so
+    /// the bookkeeping must never depend on node existence, or those counts
+    /// would be silently lost. Guarded by cacheQueue.
+    var registrationCountByCacheKey = [MPSCacheKey:Int]()
 
     func cacheNode(withIdentifier identifier:UUID, entity:NSEntityDescription) throws -> MPSCacheNode? {
 
@@ -365,8 +413,12 @@ open class MIOPersistentStore: NSIncrementalStore
 
         let key = MPSCacheKey( entityName: entity.name!, id: identifier )
 
-        cacheQueue.sync {
-            let node = nodesByCacheKey[key]!
+        try cacheQueue.sync {
+            // A missing node means a save/registration hole somewhere else —
+            // surface it as a request error, never kill the process.
+            guard let node = nodesByCacheKey[key] else {
+                throw MIOPersistentStoreError.cacheNodeNotFound( entityName: entity.name!, id: identifier )
+            }
             let v = version ?? node.version
             node.update(withValues: values, version: v)
         }
@@ -377,6 +429,10 @@ open class MIOPersistentStore: NSIncrementalStore
 
         _ = cacheQueue.sync {
             nodesByCacheKey.removeValue(forKey: key)
+            // A force-delete (delete-save) drops the registration count with
+            // the row: stale counts must not block eviction of a re-created
+            // node, and outstanding unregisters for this key become no-ops.
+            registrationCountByCacheKey.removeValue(forKey: key)
         }
 
         if entity.superentity != nil {
@@ -446,10 +502,33 @@ open class MIOPersistentStore: NSIncrementalStore
         let dl_request = self.delegate?.store(store: self, saveRequest: request)
         try dl_request?.execute()
 
-        // We only need to update the cache for updated objects. Inserted and deleted ones will be updated in the register / unregister objects
+        // The save request is where the row cache is populated for new rows
+        // (Apple's own stores do the same). Inserted objects already carry
+        // their permanent reference — obtainPermanentIDs runs before execute.
+        // Without a node here, the next save of the same object
+        // (insert -> save -> update -> save) has nothing to update.
+        for obj in request.insertedObjects ?? Set() {
+            let id = referenceObject(for: obj.objectID) as! UUID
+            if try cacheNode(withIdentifier: id, entity: obj.entity) != nil {
+                // Identifier already known (e.g. fetched before an insert with
+                // a client-supplied ID) — mutate the shared node instance.
+                try cacheNode(updateNodeWithValues: obj.changedValues(), identifier: id, entity: obj.entity)
+            }
+            else {
+                _ = try cacheNode(newNodeWithValues: obj.changedValues(), identifier: id, version: 1, entity: obj.entity, objectID: obj.objectID)
+            }
+        }
+
         for obj in request.updatedObjects ?? Set() {
             let id = referenceObject(for: obj.objectID) as! UUID
             try cacheNode(updateNodeWithValues: obj.changedValues(), identifier: id, entity: obj.entity)
+        }
+
+        // Deleted rows leave the cache with the save itself, regardless of
+        // how many registrations still point at them.
+        for obj in request.deletedObjects ?? Set() {
+            let id = referenceObject(for: obj.objectID) as! UUID
+            try cacheNode(deleteNodeAtIdentifier: id, entity: obj.entity)
         }
     }
 
