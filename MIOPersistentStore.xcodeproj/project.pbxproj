@@ -16,6 +16,7 @@
 		14FB37892D390E7E00E0FD8A /* MPSSaveRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14FB37812D390E7E00E0FD8A /* MPSSaveRequest.swift */; };
 		87AD9D5E2F7549D400071ED2 /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = 87AD9D5D2F7549D400071ED2 /* Logging */; };
 		87FDF8292F75395A00785AF4 /* MIOCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 87FDF8282F75395A00785AF4 /* MIOCore.framework */; };
+		D7F0000000000000000000B1 /* MIOCoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 14FB378C2D390EB500E0FD8A /* MIOCoreData.framework */; };
 		87FDF82D2F75395F00785AF4 /* MIOCoreLogger.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 87FDF82C2F75395F00785AF4 /* MIOCoreLogger.framework */; };
 /* End PBXBuildFile section */
 
@@ -41,6 +42,7 @@
 				87AD9D5E2F7549D400071ED2 /* Logging in Frameworks */,
 				87FDF8292F75395A00785AF4 /* MIOCore.framework in Frameworks */,
 				87FDF82D2F75395F00785AF4 /* MIOCoreLogger.framework in Frameworks */,
+				D7F0000000000000000000B1 /* MIOCoreData.framework in Frameworks */,
 			);
 		};
 /* End PBXFrameworksBuildPhase section */
