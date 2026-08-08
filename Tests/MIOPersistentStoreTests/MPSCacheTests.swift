@@ -28,6 +28,15 @@ private let testModelXML = """
         <attribute name="type" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="when" attributeType="Date" optional="YES"/>
     </entity>
+    <entity name="AutoIncEntity" syncable="YES">
+        <attribute name="identifier" attributeType="UUID"/>
+        <attribute name="name" attributeType="String"/>
+        <attribute name="counter" attributeType="Integer 64" usesScalarValueType="YES">
+            <userInfo>
+                <entry key="DBType" value="autoinc"/>
+            </userInfo>
+        </attribute>
+    </entity>
     <entity name="BaseEntity" isAbstract="YES" syncable="YES">
         <attribute name="identifier" attributeType="UUID"/>
         <attribute name="name" attributeType="String"/>

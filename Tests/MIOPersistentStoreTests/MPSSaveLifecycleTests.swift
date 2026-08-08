@@ -153,6 +153,36 @@ final class MPSSaveLifecycleTests: XCTestCase
         XCTAssertEqual(try node!.storeNode().value(for: "name") as? String, "PRF/600200")
     }
 
+    // MARK: The DLAPIServer regression: refresh must refault the object
+
+    func testRefreshAfterInsertSaveExposesDBAssignedValues() throws {
+        // PromotionalCode.codeNumber crash (DLAPIServer, 2026-08-08): objects
+        // stay realized after a save, and an inserted object's snapshot never
+        // contained DB-assigned columns (DBType = autoinc). refresh() refetches
+        // the cache node, but unless it also refaults the object, reads keep
+        // answering from the stale snapshot — nil for the autoinc column, and
+        // the generated non-optional getter traps.
+        let id = UUID()
+        let obj = MIOCoreData.NSManagedObject(entity: entity("AutoIncEntity"), insertInto: moc)
+        obj.setValue(id, forKey: "identifier")
+        obj.setValue("promo", forKey: "name")
+        // counter is never set client-side: the DB assigns it on INSERT.
+
+        try moc.save()
+
+        // The DB row now carries the assigned counter.
+        storeDelegate.nextRows = [[ "classname": "AutoIncEntity",
+                                    "identifier": id.uuidString,
+                                    "name": "promo",
+                                    "counter": 77,
+                                    "version": 2 ]]
+        try store.refresh(object: obj, context: moc)
+
+        XCTAssertEqual(obj.value(forKey: "counter") as? Int64, 77,
+                       "refresh must surface DB-assigned values on the object, not only in the node cache")
+        XCTAssertEqual(obj.value(forKey: "name") as? String, "promo")
+    }
+
     // MARK: Delete-save evicts
 
     func testDeleteSaveEvictsCacheNode() throws {
