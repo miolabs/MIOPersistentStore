@@ -508,7 +508,14 @@ open class MIOPersistentStore: NSIncrementalStore
         // Without a node here, the next save of the same object
         // (insert -> save -> update -> save) has nothing to update.
         for obj in request.insertedObjects ?? Set() {
-            let id = referenceObject(for: obj.objectID) as! UUID
+            // A non-UUID reference is a temporary ID the context let through
+            // (String, minted by NSManagedObjectID itself) — such an object
+            // was never persisted, so there is nothing to cache or delete.
+            // Skipping beats crashing the process mid-save.
+            guard let id = referenceObject(for: obj.objectID) as? UUID else {
+                Log.warning( "saveObjects: skipping inserted \(obj.entity.name ?? "?") with non-UUID reference object" )
+                continue
+            }
             if try cacheNode(withIdentifier: id, entity: obj.entity) != nil {
                 // Identifier already known (e.g. fetched before an insert with
                 // a client-supplied ID) — mutate the shared node instance.
@@ -520,14 +527,20 @@ open class MIOPersistentStore: NSIncrementalStore
         }
 
         for obj in request.updatedObjects ?? Set() {
-            let id = referenceObject(for: obj.objectID) as! UUID
+            guard let id = referenceObject(for: obj.objectID) as? UUID else {
+                Log.warning( "saveObjects: skipping updated \(obj.entity.name ?? "?") with non-UUID reference object" )
+                continue
+            }
             try cacheNode(updateNodeWithValues: obj.changedValues(), identifier: id, entity: obj.entity)
         }
 
         // Deleted rows leave the cache with the save itself, regardless of
         // how many registrations still point at them.
         for obj in request.deletedObjects ?? Set() {
-            let id = referenceObject(for: obj.objectID) as! UUID
+            guard let id = referenceObject(for: obj.objectID) as? UUID else {
+                Log.warning( "saveObjects: skipping deleted \(obj.entity.name ?? "?") with non-UUID reference object" )
+                continue
+            }
             try cacheNode(deleteNodeAtIdentifier: id, entity: obj.entity)
         }
     }
