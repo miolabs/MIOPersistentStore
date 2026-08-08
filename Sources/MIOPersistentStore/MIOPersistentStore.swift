@@ -445,8 +445,14 @@ open class MIOPersistentStore: NSIncrementalStore
         let identifier = referenceObject(for: object.objectID) as! UUID
         let node = try cacheNode(withIdentifier: identifier, entity: object.entity)
         if node != nil { node!.invalidate() }
-        
+
         try fetchObject( withIdentifier: identifier, entityName: object.objectID.entity.name!, context: context )
+
+        // Objects stay realized after a save, so refetching the node is not
+        // enough: a realized object keeps answering from its snapshot, which
+        // never contained DB-assigned columns (autoinc, DB defaults). Refault
+        // so the next read materializes from the node fetched above.
+        context.refresh( object, mergeChanges: false )
     }
         
     // MARK: - Fetching objects from server and cache
