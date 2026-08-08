@@ -168,6 +168,27 @@ final class MPSSaveLifecycleTests: XCTestCase
                      "the save request must evict deleted rows from the cache")
     }
 
+    // MARK: The DLHookServer regression: temporary ID in a save request
+
+    func testDeleteRequestWithTemporaryIDDoesNotTrap() throws {
+        // A context bug let a never-persisted object through as a deletion:
+        // its objectID is still temporary, so the reference object is a
+        // String minted by NSManagedObjectID itself, not a UUID from this
+        // store. saveObjects force-cast it and took the process down
+        // (DLHookServer crash, 2026-08-07). The row was never persisted, so
+        // skipping it is the correct save.
+        let obj = insertSimpleEntity(id: UUID(), name: "phantom")
+        XCTAssertTrue(obj.objectID.isTemporaryID)
+        XCTAssertFalse(store.referenceObject(for: obj.objectID) is UUID,
+                       "precondition: a temporary ID carries a non-UUID reference")
+
+        let request = MIOCoreData.NSSaveChangesRequest(inserted: nil, updated: nil, deleted: [obj], locked: nil)
+        XCTAssertNoThrow(try store.saveObjects(request: request, with: moc),
+                         "a stray temporary ID must be skipped, not crash the save")
+        XCTAssertNil(try store.cacheNode(withIdentifier: obj.value(forKey: "identifier") as! UUID,
+                                         entity: entity("SimpleEntity")))
+    }
+
     // MARK: Missing node is an error, not a trap
 
     func testUpdateOfUncachedNodeThrowsInsteadOfTrapping() {
