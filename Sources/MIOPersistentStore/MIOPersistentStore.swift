@@ -250,15 +250,26 @@ open class MIOPersistentStore: NSIncrementalStore
                 let ret = try fetchObjects(identifiers: faultNodeIDs, entityName: relationship.destinationEntity!.name!, context: context!)
                 Log.debug( "MIOPersistenStore:newValue:forRelationship:forObjectWith:with: fetchObject \(relationship.destinationEntity!.name!) \(faultNodeIDs) : \(String(describing: ret))" )
 
+                // The fetch succeeded (a failed one threw above), so an ID it did
+                // not return has no row: a dangling member left by a hard delete.
+                // It is not part of the relationship. Throwing here made the whole
+                // list unreadable for one dead ID, so every add or remove on it was
+                // refused. Leaving it out lets the next save of the list drop it:
+                // the save diffs against the stored IDs (storedValues), which
+                // still hold it. A to-one keeps throwing above — nil there would
+                // hide a broken mandatory link.
+                var dangling:[UUID] = []
                 for relID in faultNodeIDs {
-                    let relNode = try cacheNode(withIdentifier: relID, entity: relationship.destinationEntity!)
-                    if relNode == nil {
-                        let delegate = (context!.persistentStoreCoordinator!.persistentStores[0] as! MIOPersistentStore ).delegate!
-                        Log.critical( "CD CACHE NODE NULL: \(delegate): \(objectID.entity.name!).\(relationship.name) -> \(relationship.destinationEntity!.name!)://\(relID)")
-                        throw MIOPersistentStoreError.identifierIsNull()
+                    guard let relNode = try cacheNode(withIdentifier: relID, entity: relationship.destinationEntity!) else {
+                        dangling.append( relID )
+                        continue
                     }
                     
-                    objectIDs.insert(relNode!.objectID)
+                    objectIDs.insert(relNode.objectID)
+                }
+
+                if dangling.isEmpty == false {
+                    Log.error( "Dangling to-many members skipped: \(objectID.entity.name!).\(relationship.name) of \(identifier) -> \(relationship.destinationEntity!.name!) \(dangling.map { $0.uuidString })" )
                 }
             }
             
