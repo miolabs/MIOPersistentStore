@@ -2,17 +2,18 @@
 //  MPSRelationshipRetryTests.swift
 //  MIOPersistentStoreTests
 //
-//  End-to-end through the managed object: a to-one whose destination the
-//  store could not resolve on the first fault (the delegate returned no row,
-//  or the delegate request itself failed) must read as nil for THAT read
-//  only. The relationship stays a fault, the next access goes back to the
+//  End-to-end through the managed object: a to-one resolves to its
+//  destination without fetching it, so a destination the store cannot load
+//  (the delegate returned no row, or the delegate request itself failed)
+//  shows up when the destination is READ. That read must be nil for that
+//  read only: the destination stays a fault, the next access goes back to the
 //  store — one more delegate fetch — and resolves once the row is there.
 //
-//  Before this was pinned, MIOCoreData marked the relationship resolved
-//  before the store answered and swallowed the error, so a single failed
-//  fetch (a DB hiccup, a row the delegate query could not return) read as
-//  nil for the rest of the object's life — a mandatory to-one then crashed
-//  its force-unwrapping accessor with the column perfectly set in the DB.
+//  Before this was pinned, a single failed fetch (a DB hiccup, a row the
+//  delegate query could not return) read as nil for the rest of the object's
+//  life. It was first pinned on the relationship read, when the to-one
+//  fetched its destination eagerly; the destination is lazy now, so the same
+//  guarantee is pinned on the destination's own load.
 //
 //  A genuine nil (the owner row carries no value) is an answer: it is
 //  resolved once and never re-asked.
@@ -170,26 +171,34 @@ final class MPSRelationshipRetryTests: XCTestCase
 
     // MARK: Tests
 
+    /// The to-one itself: the destination, with no delegate fetch
+    private func target(of owner: MIOCoreData.NSManagedObject, fetchesBefore: Int) throws -> MIOCoreData.NSManagedObject {
+        let target = try XCTUnwrap(owner.value(forKey: "target") as? MIOCoreData.NSManagedObject)
+        XCTAssertEqual(storeDelegate.fetchCount, fetchesBefore, "resolving a to-one must not fetch its destination")
+        XCTAssertFalse(owner.hasFault(forRelationshipNamed: "target"))
+        return target
+    }
+
     func testMissingDestinationRowReadsNilOnceThenResolvesWhenTheRowIsFetchable() throws {
         let ownerID = UUID(), targetID = UUID()
         let owner = try fetchOwner(ownerRow(ownerID, target: targetID))
         let fetchesBefore = storeDelegate.fetchCount
+        let target = try target(of: owner, fetchesBefore: fetchesBefore)
 
-        // First fault: the delegate cannot produce the destination row.
+        // First load: the delegate cannot produce the destination row.
         storeDelegate.nextRows = []
-        XCTAssertNil(owner.value(forKey: "target"), "an unresolvable destination reads as nil for this read")
+        XCTAssertNil(target.value(forKey: "identifier"), "an unloadable destination reads as nil for this read")
         XCTAssertEqual(storeDelegate.fetchCount - fetchesBefore, 1)
-        XCTAssertTrue(owner.hasFault(forRelationshipNamed: "target"), "the failed read must leave the relationship faulted")
+        XCTAssertTrue(target.isFault, "the failed load must leave the destination a fault")
 
         // The row is there now: the next read goes back to the store.
         storeDelegate.nextRows = [ targetRow(targetID) ]
-        let target = owner.value(forKey: "target") as? MIOCoreData.NSManagedObject
+        XCTAssertEqual(target.value(forKey: "identifier") as? UUID, targetID)
         XCTAssertEqual(storeDelegate.fetchCount - fetchesBefore, 2, "the next access must fetch through the delegate again")
-        XCTAssertEqual(target?.value(forKey: "identifier") as? UUID, targetID)
-        XCTAssertFalse(owner.hasFault(forRelationshipNamed: "target"))
+        XCTAssertFalse(target.isFault)
 
-        // Resolved: served from the snapshot from now on.
-        _ = owner.value(forKey: "target")
+        // Loaded: served from the snapshot from now on.
+        _ = target.value(forKey: "identifier")
         XCTAssertEqual(storeDelegate.fetchCount - fetchesBefore, 2)
     }
 
@@ -197,19 +206,19 @@ final class MPSRelationshipRetryTests: XCTestCase
         let ownerID = UUID(), targetID = UUID()
         let owner = try fetchOwner(ownerRow(ownerID, target: targetID))
         let fetchesBefore = storeDelegate.fetchCount
+        let target = try target(of: owner, fetchesBefore: fetchesBefore)
 
         // The delegate request itself fails (DB error, timeout...).
         storeDelegate.nextRows = [ targetRow(targetID) ]
         storeDelegate.nextError = MockDelegateError()
-        XCTAssertNil(owner.value(forKey: "target"), "a failed delegate request reads as nil for this read")
+        XCTAssertNil(target.value(forKey: "identifier"), "a failed delegate request reads as nil for this read")
         XCTAssertEqual(storeDelegate.fetchCount - fetchesBefore, 1)
-        XCTAssertTrue(owner.hasFault(forRelationshipNamed: "target"))
+        XCTAssertTrue(target.isFault)
 
         // Healthy again: the same read resolves.
-        let target = owner.value(forKey: "target") as? MIOCoreData.NSManagedObject
+        XCTAssertEqual(target.value(forKey: "identifier") as? UUID, targetID)
         XCTAssertEqual(storeDelegate.fetchCount - fetchesBefore, 2)
-        XCTAssertEqual(target?.value(forKey: "identifier") as? UUID, targetID)
-        XCTAssertFalse(owner.hasFault(forRelationshipNamed: "target"))
+        XCTAssertFalse(target.isFault)
     }
 
     func testNilRelationshipIsResolvedOnceAndNeverRefetched() throws {

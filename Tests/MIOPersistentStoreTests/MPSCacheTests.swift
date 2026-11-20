@@ -304,8 +304,6 @@ final class MPSCacheTests: XCTestCase
     }
 }
 
-#endif
-
 // MARK: - Temporary-object invariant
 
 extension MPSCacheTests {
@@ -330,3 +328,5 @@ extension MPSCacheTests {
         XCTAssertEqual(store.nodesByCacheKey.count, 0, "registering a temporary object must not cache it")
     }
 }
+
+#endif
