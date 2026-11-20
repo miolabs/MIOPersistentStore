@@ -179,7 +179,7 @@ final class MPSRelationshipFaultingTests: XCTestCase
 
     // MARK: newValue(forRelationship:) — to-one
 
-    func testToOneNewValueReturnsObjectIDFaultingMissingNodeWithOneFetch() throws {
+    func testToOneNewValueReturnsObjectIDWithoutFetchingTheDestination() throws {
         let parentID = UUID(), favID = UUID()
         try fetch("ParentEntity", rows: [ parentRow(parentID, favorite: favID) ])
 
@@ -193,11 +193,29 @@ final class MPSRelationshipFaultingTests: XCTestCase
         }
         XCTAssertEqual(referenceID(of: objID), favID)
         XCTAssertEqual(objID.entity.name, "ItemEntity")
-        XCTAssertEqual(storeDelegate.fetchCount - fetchesBefore, 1, "missing node must fault with exactly one fetch")
+        XCTAssertEqual(storeDelegate.fetchCount, fetchesBefore, "the destination's row is fetched when it is read, not here")
 
-        // Second read hits the cache: no further fetch.
-        _ = try store.newValue(forRelationship: favoriteRel, forObjectWith: parentObjectID(parentID), with: moc)
+        // The row is fetched by the destination's own load, once.
+        _ = try store.newValuesForObject(with: objID, with: moc)
         XCTAssertEqual(storeDelegate.fetchCount - fetchesBefore, 1)
+        _ = try store.newValuesForObject(with: objID, with: moc)
+        XCTAssertEqual(storeDelegate.fetchCount - fetchesBefore, 1)
+
+        // And the relationship now answers with that same loaded node.
+        let again = try store.newValue(forRelationship: favoriteRel, forObjectWith: parentObjectID(parentID), with: moc)
+        XCTAssertEqual((again as? MIOCoreData.NSManagedObjectID).map { referenceID(of: $0) }, favID)
+        XCTAssertEqual(storeDelegate.fetchCount - fetchesBefore, 1)
+    }
+
+    func testMissingRowIsAnErrorWhenTheObjectIsLoaded() throws {
+        let parentID = UUID(), favID = UUID()
+        try fetch("ParentEntity", rows: [ parentRow(parentID, favorite: favID) ])
+
+        let objID = try XCTUnwrap(store.newValue(forRelationship: favoriteRel, forObjectWith: parentObjectID(parentID), with: moc) as? MIOCoreData.NSManagedObjectID)
+
+        // No row for it: empty values would be a hollow object
+        storeDelegate.nextRows = []
+        XCTAssertThrowsError(try store.newValuesForObject(with: objID, with: moc))
     }
 
     func testToOneNewValueForNilRelationshipReturnsNSNull() throws {

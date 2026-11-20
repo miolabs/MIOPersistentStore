@@ -156,6 +156,48 @@ open class MIOPersistentStore: NSIncrementalStore
             return NSIncrementalStoreNode( objectID: objectID, withValues: [:], version: 0 )
         }
 
+        // An object that cannot be loaded (the request failed, or the server
+        // has no row for it) fails the same way under both Core Datas: its
+        // attributes read nil for that read, it stays a fault, and the next
+        // read goes back to the server.
+        #if APPLE_CORE_DATA
+        // Apple's Core Data has no such answer: an error thrown from here is
+        // raised as an exception out of the read (or, for its one "object is
+        // gone" code, marks the object deleted for good). So the store gives
+        // that outcome itself: no values for this read, and the object is
+        // turned back into a fault on the context's queue.
+        do {
+            return try loadedStoreNode( for: objectID, with: context )
+        }
+        catch {
+            Log.error( "Could not fulfill fault for \(objectID.entity.name ?? "?") \(objectID.uriRepresentation().absoluteString): \(error)" )
+            // Still inside the failed read, Apple goes on to ask for the
+            // object's to-ones: those must not go to the server for it again
+            cacheQueue.sync { _ = unfulfilledObjectIDs.insert( objectID ) }
+            context.perform { [weak self, weak context] in
+                self?.cacheQueue.sync { _ = self?.unfulfilledObjectIDs.remove( objectID ) }
+                guard let context, let object = context.registeredObject( for: objectID ) else { return }
+                // Nothing was loaded, so there is nothing to lose — unless the
+                // caller wrote to it in the meantime
+                if object.hasChanges == false { context.refresh( object, mergeChanges: false ) }
+            }
+            return NSIncrementalStoreNode( objectID: objectID, withValues: [:], version: 0 )
+        }
+        #else
+        // Our Core Data does it on the error: it logs it and leaves the
+        // object a fault
+        return try loadedStoreNode( for: objectID, with: context )
+        #endif
+    }
+
+    #if APPLE_CORE_DATA
+    /// Objects whose load just failed, until they are faults again. Guarded
+    /// by cacheQueue.
+    var unfulfilledObjectIDs = Set<NSManagedObjectID>()
+    #endif
+
+    func loadedStoreNode(for objectID: NSManagedObjectID, with context: NSManagedObjectContext) throws -> NSIncrementalStoreNode {
+
         let identifier = referenceObject( for: objectID ) as! UUID
 
         var node = try cacheNode( withIdentifier: identifier, entity: objectID.entity )
@@ -167,6 +209,16 @@ open class MIOPersistentStore: NSIncrementalStore
             Log.debug( "MIOPersistenStore:newValuesForObject:with:with: fetchObject \(objectID.entity.name!) \(identifier)" )
             let ret = try fetchObject( withIdentifier:identifier, entityName: objectID.entity.name!, context:context )
             Log.debug( "MIOPersistenStore:newValuesForObject:with:with: fetchObject \(objectID.entity.name!) \(identifier) :\(String(describing: ret))" )
+
+            // The fetch succeeded (a failed one threw above) and brought no
+            // row: this object does not exist in the server. A to-one hands
+            // out the destination's ID without fetching it, so this is where
+            // a broken link shows up. Answering with empty values would make
+            // a hollow object that reads nil forever.
+            node = try cacheNode( withIdentifier: identifier, entity: objectID.entity )
+            if node == nil || node!.version == 0 {
+                throw MIOPersistentStoreError.cacheNodeNotFound( storeURL?.absoluteString ?? "", entityName: objectID.entity.name!, id: identifier )
+            }
         }
         
         let storeNode = try node!.storeNode()
@@ -182,6 +234,14 @@ open class MIOPersistentStore: NSIncrementalStore
             Log.warning( "newValue(forRelationship: \(relationship.name)) asked for a temporary object of \(objectID.entity.name ?? "?")" )
             return relationship.isToMany ? [NSManagedObjectID]() : NSNull()
         }
+
+        #if APPLE_CORE_DATA
+        // The object's own load failed a moment ago (newValuesForObject): it
+        // has no relationships for this read either
+        if cacheQueue.sync( execute: { unfulfilledObjectIDs.contains( objectID ) } ) {
+            return relationship.isToMany ? [NSManagedObjectID]() : NSNull()
+        }
+        #endif
 
         let identifier = referenceObject(for: objectID) as! UUID
 
@@ -202,7 +262,29 @@ open class MIOPersistentStore: NSIncrementalStore
         
         if relationship.isToMany == false {
             guard let relIdentifier = value as? UUID else { return NSNull() }
-            
+
+            // A to-one resolves to the destination's ID alone, under both
+            // Core Datas: its row is fetched when something reads it
+            // (newValuesForObject), which is also where a missing row fails.
+            // Fetching it here cost a request for a destination nobody reads,
+            // and under Apple's Core Data — which asks for every to-one of an
+            // object when its fault fires — one request per object of the
+            // whole to-one graph.
+            //
+            // An object ID needs the destination's concrete entity. With no
+            // subentities it is the relationship's own destination entity;
+            // with subentities, the owner's row says it ("<name>.classname").
+            // Only a row that does not say it leaves no choice but fetching
+            // the destination, below.
+            let exactEntity = relationship.destinationEntity!.subentities.isEmpty ? relationship.destinationEntity!
+                                                                                  : node!.destinationEntity( forRelationship: relationship )
+            if let exactEntity {
+                if let cached = try cacheNode( withIdentifier: relIdentifier, entity: exactEntity ) {
+                    return cached.objectID
+                }
+                return newObjectID( for: exactEntity, referenceObject: relIdentifier )
+            }
+
             var relNode = try cacheNode( withIdentifier: relIdentifier, entity: relationship.destinationEntity! )
             if relNode == nil {
                 //let delegate = ( context!.persistentStoreCoordinator!.persistentStores[0] as! MIOPersistentStore ).delegate!

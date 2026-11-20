@@ -62,6 +62,12 @@ open class MPSCacheNode : NSObject
 
     func update(withValues values:[String:Any], version: UInt64) {
         _lock.lock(); defer { _lock.unlock() }
+        // A relationship that changes without saying its destination's class
+        // (a save hands over the object, not a row) must not keep the class
+        // of the destination it had before
+        for key in values.keys where _entity.relationshipsByName[key] != nil {
+            _rawValues.removeValue( forKey: MPSCacheNode.destinationClassKey( forRelationshipNamed: key ) )
+        }
         _rawValues.merge(values, uniquingKeysWith: { (_, new) in new } )
         _attributeValues = nil
         _relationshipValues = nil
@@ -91,6 +97,30 @@ open class MPSCacheNode : NSObject
         _lock.lock(); defer { _lock.unlock() }
         try convert_values_if_needed()
         return _relationshipValues![relationship.name]
+    }
+
+    /// Row key that carries the concrete entity of a to-one's destination:
+    /// "<relationship>.classname". The owner's row is the only place that can
+    /// say it without fetching the destination, and a destination entity with
+    /// subentities cannot be handed out as an object without knowing it.
+    public static func destinationClassKey(forRelationshipNamed name: String) -> String {
+        return name + ".classname"
+    }
+
+    /// The destination's concrete entity as the owner's row declared it, nil
+    /// when the row does not say (or says something that is not the
+    /// relationship's destination entity or one of its subentities)
+    func destinationEntity(forRelationship relationship: NSRelationshipDescription) -> NSEntityDescription? {
+        _lock.lock(); defer { _lock.unlock() }
+        guard let name = _rawValues[ MPSCacheNode.destinationClassKey( forRelationshipNamed: relationship.name ) ] as? String,
+              let declared = relationship.destinationEntity!.managedObjectModel.entitiesByName[name] else { return nil }
+
+        var entity: NSEntityDescription? = declared
+        while let e = entity {
+            if e.name == relationship.destinationEntity!.name { return declared }
+            entity = e.superentity
+        }
+        return nil
     }
 
     func invalidate(){
