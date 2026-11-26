@@ -18,6 +18,7 @@
 		87FDF8292F75395A00785AF4 /* MIOCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 87FDF8282F75395A00785AF4 /* MIOCore.framework */; };
 		D7F0000000000000000000B1 /* MIOCoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 14FB378C2D390EB500E0FD8A /* MIOCoreData.framework */; };
 		87FDF82D2F75395F00785AF4 /* MIOCoreLogger.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 87FDF82C2F75395F00785AF4 /* MIOCoreLogger.framework */; };
+		997802F030B7C6CB00C7DD8B /* MPSPredicateFilters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 997802EF30B7C6CB00C7DD8B /* MPSPredicateFilters.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,6 +34,7 @@
 		14FB378C2D390EB500E0FD8A /* MIOCoreData.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MIOCoreData.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		87FDF8282F75395A00785AF4 /* MIOCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MIOCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		87FDF82C2F75395F00785AF4 /* MIOCoreLogger.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MIOCoreLogger.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		997802EF30B7C6CB00C7DD8B /* MPSPredicateFilters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPSPredicateFilters.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,6 +75,7 @@
 				14FB377C2D390E7E00E0FD8A /* MPSCacheNode.swift */,
 				14FB377D2D390E7E00E0FD8A /* MPSFetchRequest.swift */,
 				14FB377E2D390E7E00E0FD8A /* MPSParser.swift */,
+				997802EF30B7C6CB00C7DD8B /* MPSPredicateFilters.swift */,
 				14FB377F2D390E7E00E0FD8A /* MPSRequest.swift */,
 				14FB37802D390E7E00E0FD8A /* MPSRequestResponse.swift */,
 				14FB37812D390E7E00E0FD8A /* MPSSaveRequest.swift */,
@@ -175,6 +178,7 @@
 				14FB37862D390E7E00E0FD8A /* MPSCacheNode.swift in Sources */,
 				14FB37872D390E7E00E0FD8A /* MPSRequest.swift in Sources */,
 				14FB37882D390E7E00E0FD8A /* MPSParser.swift in Sources */,
+				997802F030B7C6CB00C7DD8B /* MPSPredicateFilters.swift in Sources */,
 				14FB37892D390E7E00E0FD8A /* MPSSaveRequest.swift in Sources */,
 			);
 		};
